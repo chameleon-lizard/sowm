@@ -8,6 +8,9 @@
 #include <signal.h>
 #include <unistd.h>
 
+/// Just for demonstration purposes
+#include <stdio.h>
+
 typedef union {
     const char** com;
     const int i;
@@ -31,6 +34,7 @@ typedef struct client {
 static void button_press(XEvent *e);
 static void button_release();
 static void configure_request(XEvent *e);
+static void configure_notify(XEvent *e);
 static void key_press(XEvent *e);
 static void map_request(XEvent *e);
 static void notify_destroy(XEvent *e);
@@ -54,6 +58,8 @@ static unsigned int ww, wh;
 static Display      *d;
 static XButtonEvent mouse;
 
+static Window       root;
+
 static void (*events[LASTEvent])(XEvent *e) = {
     [ButtonPress]      = button_press,
     [ButtonRelease]    = button_release,
@@ -62,7 +68,8 @@ static void (*events[LASTEvent])(XEvent *e) = {
     [MapRequest]       = map_request,
     [DestroyNotify]    = notify_destroy,
     [EnterNotify]      = notify_enter,
-    [MotionNotify]     = notify_motion
+    [MotionNotify]     = notify_motion,
+    [ConfigureNotify]  = configure_notify
 };
 
 #include "config.h"
@@ -257,6 +264,17 @@ void map_request(XEvent *e) {
     win_focus(list->prev);
 }
 
+// Here is the function that handles the event
+void configure_notify(XEvent *e) {
+    // Now you know that the window resolution has changed, so you can do
+    // something with it.
+    XConfigureEvent xce = e->xconfigure;
+    
+    FILE *file = fopen("lol.txt", "w+");
+    fprintf(file, "Resolution changed\n");
+    fclose(file);
+}
+
 void run(const Arg arg) {
     if (fork()) return;
     if (d) close(ConnectionNumber(d));
@@ -274,11 +292,17 @@ int main(void) {
     XSetErrorHandler(xerror);
 
     int s       = DefaultScreen(d);
-    Window root = RootWindow(d, s);
+    root = RootWindow(d, s);
     sw          = XDisplayWidth(d, s);
     sh          = XDisplayHeight(d, s);
 
-    XSelectInput(d,  root, SubstructureRedirectMask);
+    // Here I mapped the root window to the display
+    XMapWindow(d, root);
+
+    // Since I added StructureNotifyMask, we can be notified if the resolution
+    // of the root window is changed. If it is changed, it means that the 
+    // display resolution is changed too.
+    XSelectInput(d,  root, SubstructureRedirectMask | StructureNotifyMask);
     XDefineCursor(d, root, XCreateFontCursor(d, 68));
 
     for (unsigned int i=0; i < sizeof(keys)/sizeof(*keys); ++i)
