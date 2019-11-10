@@ -8,7 +8,7 @@
 #include <signal.h>
 #include <unistd.h>
 
-/// Just for demonstration purposes
+/// Just for demonstration purposes.
 #include <stdio.h>
 
 typedef union {
@@ -296,10 +296,10 @@ int main(void) {
     sw          = XDisplayWidth(d, s);
     sh          = XDisplayHeight(d, s);
 
-    // Here I mapped the root window to the display
+    // Here I mapped the root window to the display.
     XMapWindow(d, root);
 
-    // Since I added StructureNotifyMask, we can be notified if the resolution
+    // Since I added StructureNotifyMask, we will be notified if the resolution
     // of the root window is changed. If it is changed, it means that the 
     // display resolution is changed too.
     XSelectInput(d,  root, SubstructureRedirectMask | StructureNotifyMask);
